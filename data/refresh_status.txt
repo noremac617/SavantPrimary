@@ -1,0 +1,1 @@
+success|Trade plan successfully refreshed from Google Sheets.

@@ -1,0 +1,18 @@
+{
+  "enabled": false,
+  "simulation_params": {
+    "base_spread_pct": 0.05,
+    "max_slippage_pct": 0.15,
+    "volatility_multiplier": 1.5,
+    "time_decay_factor": 0.3,
+    "volume_impact_factor": 0.2,
+    "fill_delay_min": 1.0,
+    "fill_delay_max": 3.0,
+    "realistic_rejection_rate": 0.02
+  },
+  "visual_indicators": {
+    "show_demo_banner": true,
+    "demo_color_scheme": true,
+    "add_demo_prefix": true
+  }
+}
