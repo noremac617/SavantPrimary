@@ -1,0 +1,11 @@
+flask
+loguru
+pandas
+playwright
+requests
+schedule
+yfinance
+python-dotenv
+exchange-calendars
+gunicorn
+flask-compress
