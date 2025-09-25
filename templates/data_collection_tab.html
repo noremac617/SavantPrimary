@@ -1,0 +1,532 @@
+<!-- Updated data_collection_tab.html - Remove market context references -->
+
+<style>
+  .card {
+    background-color: #0f0f0f;
+    border: 1px solid #2c2c2c;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 15px rgba(0, 184, 255, 0.2);
+  }
+
+  .card-header {
+    background-color: #2a2a2a;
+    color: #00b8ff;
+    font-weight: bold;
+  }
+
+  .table-dark {
+    background-color: #121212;
+  }
+
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .status-success { background-color: #28a745; }
+  .status-warning { background-color: #ffc107; }
+  .status-danger { background-color: #dc3545; }
+
+  .stat-card {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00b8ff;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: #ccc;
+  }
+
+  .btn {
+    background-color: #000 !important;
+    color: #00b8ff !important;
+    border: 1px solid #00b8ff !important;
+    font-weight: 600;
+  }
+
+  .btn:hover {
+    background-color: #00b8ff !important;
+    color: #000 !important;
+  }
+
+  .btn-download {
+    background-color: #000 !important;
+    color: #28a745 !important;
+    border: 1px solid #28a745 !important;
+  }
+
+  .btn-download:hover {
+    background-color: #28a745 !important;
+    color: #000 !important;
+  }
+</style>
+
+<!-- Collection Status Cards -->
+<div class="row gy-4 mb-4">
+  <!-- Database Status -->
+  <div class="col-12 col-md-6">
+    <div class="card">
+      <div class="card-header">Database Status</div>
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+          <span class="status-indicator status-{{ 'success' if db_status.connected else 'danger' }}"></span>
+          <span>Database: {{ 'Connected' if db_status.connected else 'Disconnected' }}</span>
+        </div>
+        
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="stat-number">{{ db_status.total_days or 0 }}</div>
+              <div class="stat-label">Days of Data</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-card">
+              <div class="stat-number">{{ db_status.total_symbols or 0 }}</div>
+              <div class="stat-label">Symbols Tracked</div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="stat-card">
+              <div class="stat-number">{{ db_status.pick_records or 0 }}</div>
+              <div class="stat-label">Daily Picks</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <small class="text-light">
+            Database: {{ db_status.db_path }}<br>
+            Last Updated: {{ db_status.last_updated or 'Never' }}
+          </small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection History -->
+  <div class="col-12 col-md-6">
+    <div class="card">
+      <div class="card-header">Recent Collections</div>
+      <div class="card-body">
+        {% if collection_history %}
+          <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-dark table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Records</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in collection_history %}
+                <tr>
+                  <td>{{ entry.date }}</td>
+                  <td>{{ entry.type }}</td>
+                  <td>
+                    <span class="status-indicator status-{{ entry.status_class }}"></span>
+                    {{ entry.status }}
+                  </td>
+                  <td>{{ entry.records }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-light">No collection history available yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Data Browser -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Data Browser</span>
+        <div>
+          <button class="btn btn-sm" onclick="refreshDataBrowser()">
+            <i class="fas fa-sync-alt"></i> Refresh
+          </button>
+          <button class="btn btn-sm" onclick="exportData()">
+            <i class="fas fa-download"></i> Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Filter Controls -->
+        <div class="row g-3 mb-3">
+          <div class="col-md-3">
+            <label class="form-label">Table:</label>
+            <select id="tableSelect" class="form-select" onchange="loadTableData()">
+              <option value="daily_summaries">Daily Summaries</option>
+              <option value="daily_picks">Daily Picks</option>
+              <option value="trade_outcomes">Trade Outcomes</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Date Range:</label>
+            <select id="dateRange" class="form-select" onchange="loadTableData()">
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="all">All Data</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Symbol Filter:</label>
+            <input type="text" id="symbolFilter" class="form-control" placeholder="e.g., AAPL, TSLA" onchange="loadTableData()">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Limit:</label>
+            <select id="limitSelect" class="form-select" onchange="loadTableData()">
+              <option value="10">10 rows</option>
+              <option value="100">100 rows</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div id="dataTableContainer">
+          <div class="text-center text-light">
+            <i class="fas fa-database fa-2x mb-2"></i>
+            <p>Select table and filters above to view data</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">Manual Actions</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <button class="btn w-100" onclick="runManualCollection('morning')">
+              <i class="fas fa-sun"></i> Test Morning Collection
+            </button>
+            <small class="text-light d-block mt-1">Test real-time data collection for current picks</small>
+          </div>
+          <div class="col-md-3">
+            <button class="btn w-100" onclick="runManualCollection('eod')">
+              <i class="fas fa-moon"></i> Run End-of-Day Collection
+            </button>
+            <small class="text-light d-block mt-1">Collect minute OHLCV data for today's picks</small>
+          </div>
+          <div class="col-md-3">
+            <button class="btn w-100" onclick="viewDatabaseInfo()">
+              <i class="fas fa-info-circle"></i> Database Info
+            </button>
+            <small class="text-light d-block mt-1">View detailed database schema and statistics</small>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-download w-100" onclick="downloadDatabase()">
+              <i class="fas fa-database"></i> Download Database
+            </button>
+            <small class="text-light d-block mt-1">Download complete market data database backup</small>
+          </div>
+          <div class="col-md-3">
+            <button class="btn btn-danger w-100" onclick="resetDatabase()">
+              <i class="fas fa-trash"></i> Reset Database
+            </button>
+            <small class="text-light d-block mt-1">Delete and recreate database from scratch</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Database Info -->
+<div class="modal fade" id="dbInfoModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header">
+        <h5 class="modal-title">Database Information</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="dbInfoContent">
+          <div class="text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2">Loading database information...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function refreshDataBrowser() {
+  loadTableData();
+  // Also refresh the status cards
+  window.location.reload();
+}
+
+function loadTableData() {
+  const table = document.getElementById('tableSelect').value;
+  const dateRange = document.getElementById('dateRange').value;
+  const symbolFilter = document.getElementById('symbolFilter').value;
+  const limit = document.getElementById('limitSelect').value;
+  
+  const container = document.getElementById('dataTableContainer');
+  container.innerHTML = `
+    <div class="text-center">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">Loading ${table} data...</p>
+    </div>
+  `;
+  
+  const params = new URLSearchParams({
+    table: table,
+    date_range: dateRange,
+    limit: limit
+  });
+  
+  if (symbolFilter) {
+    params.append('symbol_filter', symbolFilter);
+  }
+  
+  fetch(`/api/data_browser?${params}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        displayTableData(data.data, data.columns);
+      } else {
+        container.innerHTML = `
+          <div class="alert alert-danger">
+            Error loading data: ${data.error || 'Unknown error'}
+          </div>
+        `;
+      }
+    })
+    .catch(error => {
+      container.innerHTML = `
+        <div class="alert alert-danger">
+          Network error: ${error.message}
+        </div>
+      `;
+    });
+}
+
+function displayTableData(data, columns) {
+  const container = document.getElementById('dataTableContainer');
+  
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div class="alert alert-info">
+        No data found for the selected filters.
+      </div>
+    `;
+    return;
+  }
+  
+  let tableHtml = `
+    <div class="table-responsive">
+      <table class="table table-dark table-hover table-sm">
+        <thead>
+          <tr>
+  `;
+  
+  columns.forEach(col => {
+    tableHtml += `<th>${col}</th>`;
+  });
+  
+  tableHtml += `
+          </tr>
+        </thead>
+        <tbody>
+  `;
+  
+  data.forEach(row => {
+    tableHtml += '<tr>';
+    columns.forEach(col => {
+      let value = row[col];
+      if (value === null || value === undefined) {
+        value = '';
+      } else if (typeof value === 'number') {
+        value = parseFloat(value).toFixed(4);
+      }
+      tableHtml += `<td>${value}</td>`;
+    });
+    tableHtml += '</tr>';
+  });
+  
+  tableHtml += `
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 text-light">
+      Showing ${data.length} records
+    </div>
+  `;
+  
+  container.innerHTML = tableHtml;
+}
+
+function runManualCollection(type) {
+  const button = event.target;
+  const originalText = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
+  
+  fetch('/api/manual_collection', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({type: type})
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(`${type} collection completed successfully!\nRecords collected: ${data.records || 'Unknown'}`);
+      refreshDataBrowser();
+    } else {
+      alert(`Collection failed: ${data.error}`);
+    }
+  })
+  .catch(error => {
+    alert(`Error: ${error.message}`);
+  })
+  .finally(() => {
+    button.disabled = false;
+    button.innerHTML = originalText;
+  });
+}
+
+function exportData() {
+  const table = document.getElementById('tableSelect').value;
+  const dateRange = document.getElementById('dateRange').value;
+  const symbolFilter = document.getElementById('symbolFilter').value;
+  
+  const params = new URLSearchParams({
+    table: table,
+    date_range: dateRange,
+    format: 'csv'
+  });
+  
+  if (symbolFilter) {
+    params.append('symbol_filter', symbolFilter);
+  }
+  
+  window.open(`/api/export_data?${params}`, '_blank');
+}
+
+function downloadDatabase() {
+  const button = event.target;
+  const originalText = button.innerHTML;
+  
+  // Show loading state
+  button.disabled = true;
+  button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparing Download...';
+  
+  // Create a temporary link for download
+  const link = document.createElement('a');
+  link.href = '/api/download_database';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  
+  // Trigger download
+  link.click();
+  
+  // Clean up
+  document.body.removeChild(link);
+  
+  // Reset button after a short delay
+  setTimeout(() => {
+    button.disabled = false;
+    button.innerHTML = originalText;
+  }, 2000);
+  
+  // Show success message
+  setTimeout(() => {
+    alert('Database download started! The file will be saved to your Downloads folder.');
+  }, 500);
+}
+
+function resetDatabase() {
+  if (confirm('Are you sure you want to delete the entire database? This cannot be undone.')) {
+    fetch('/api/reset_database', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'}
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('Database reset successfully!');
+        window.location.reload();
+      } else {
+        alert('Reset failed: ' + data.error);
+      }
+    });
+  }
+}
+
+function viewDatabaseInfo() {
+  const modal = new bootstrap.Modal(document.getElementById('dbInfoModal'));
+  modal.show();
+  
+  fetch('/api/database_info')
+    .then(response => response.json())
+    .then(data => {
+      let content = '<div class="row g-3">';
+      
+      if (data.success) {
+        // Table information
+        content += '<div class="col-12"><h6>Tables</h6><div class="table-responsive">';
+        content += '<table class="table table-dark table-sm">';
+        content += '<thead><tr><th>Table</th><th>Records</th><th>Size</th></tr></thead><tbody>';
+        
+        Object.entries(data.tables).forEach(([table, info]) => {
+          content += `<tr><td>${table}</td><td>${info.count}</td><td>${info.size || 'N/A'}</td></tr>`;
+        });
+        
+        content += '</tbody></table></div></div>';
+        
+        // Database stats
+        content += '<div class="col-12"><h6>Database Statistics</h6>';
+        content += `<p class="mb-1"><strong>Total Size:</strong> ${data.total_size || 'Unknown'}</p>`;
+        content += `<p class="mb-1"><strong>Date Range:</strong> ${data.date_range || 'No data'}</p>`;
+        content += `<p class="mb-1"><strong>Last Collection:</strong> ${data.last_collection || 'Never'}</p>`;
+        content += '</div>';
+      } else {
+        content += `<div class="col-12"><div class="alert alert-danger">Error: ${data.error}</div></div>`;
+      }
+      
+      content += '</div>';
+      document.getElementById('dbInfoContent').innerHTML = content;
+    })
+    .catch(error => {
+      document.getElementById('dbInfoContent').innerHTML = `
+        <div class="alert alert-danger">Error loading database info: ${error.message}</div>
+      `;
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-load daily summaries by default
+  loadTableData();
+});
+</script>

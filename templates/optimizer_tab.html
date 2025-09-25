@@ -1,0 +1,358 @@
+<style>
+  .card {
+    background-color: #0f0f0f;
+    border: 1px solid #2c2c2c;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 15px rgba(0, 184, 255, 0.2);
+  }
+
+  .card-header {
+    background-color: #2a2a2a;
+    color: #00b8ff;
+    font-weight: bold;
+  }
+
+  .text-light,
+  .card-body,
+  .card-body strong {
+    color: #e0e0e0 !important;
+  }
+
+  .metric-box {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00b8ff;
+  }
+
+  .metric-label {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-top: 0.25rem;
+  }
+
+  .optimization-item {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+  }
+
+  .optimization-rank {
+    color: #00b8ff;
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  .pnl-positive {
+    color: #28a745;
+    font-weight: bold;
+  }
+
+  .pnl-negative {
+    color: #dc3545;
+    font-weight: bold;
+  }
+
+  .strategy-type {
+    background-color: #17a2b8;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: bold;
+  }
+
+  .strategy-type.universal {
+    background-color: #17a2b8;
+  }
+
+  .strategy-type.symbol-specific {
+    background-color: #28a745;
+  }
+</style>
+
+<!-- Optimizer Infographic Dashboard -->
+<div class="row gy-4">
+  <!-- Universal BUY Strategy -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Universal BUY Strategy</div>
+      <div class="card-body">
+        <div class="row text-center mb-3">
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="buy-total-trades">-</div>
+              <div class="metric-label">Total Trades</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="buy-avg-pnl">-</div>
+              <div class="metric-label">Avg P/L</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="buy-win-rate">-</div>
+              <div class="metric-label">Win Rate</div>
+            </div>
+          </div>
+        </div>
+        
+        <h6 class="text-light mb-2">Top 5 Optimizations:</h6>
+        <div id="buy-optimizations">
+          <div class="text-center text-muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Universal SHORT Strategy -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Universal SHORT Strategy</div>
+      <div class="card-body">
+        <div class="row text-center mb-3">
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="short-total-trades">-</div>
+              <div class="metric-label">Total Trades</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="short-avg-pnl">-</div>
+              <div class="metric-label">Avg P/L</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="metric-box">
+              <div class="metric-value" id="short-win-rate">-</div>
+              <div class="metric-label">Win Rate</div>
+            </div>
+          </div>
+        </div>
+        
+        <h6 class="text-light mb-2">Top 5 Optimizations:</h6>
+        <div id="short-optimizations">
+          <div class="text-center text-muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Symbol-Specific BUY Strategies -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Symbol-Specific BUY Strategies</div>
+      <div class="card-body">
+        <div class="metric-box mb-3 text-center">
+          <div class="metric-value" id="symbol-buy-count">-</div>
+          <div class="metric-label">Optimized Symbols</div>
+        </div>
+        
+        <div id="symbol-buy-list" style="max-height: 300px; overflow-y: auto;">
+          <div class="text-center text-muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Symbol-Specific SHORT Strategies -->
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">Symbol-Specific SHORT Strategies</div>
+      <div class="card-body">
+        <div class="metric-box mb-3 text-center">
+          <div class="metric-value" id="symbol-short-count">-</div>
+          <div class="metric-label">Optimized Symbols</div>
+        </div>
+        
+        <div id="symbol-short-list" style="max-height: 300px; overflow-y: auto;">
+          <div class="text-center text-muted">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Auto-load data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('buy-total-trades')) {
+    loadOptimizerInfographic();
+  }
+});
+
+function loadOptimizerInfographic() {
+  // Load strategy distribution and performance data
+  Promise.all([
+    fetch('/api/optimizer/strategy_distribution').then(r => r.json()),
+    fetch('/api/optimizer/current_performance').then(r => r.json())
+  ])
+  .then(([distributionData, performanceData]) => {
+    if (distributionData.success && performanceData.success) {
+      updateInfographic(distributionData, performanceData);
+    } else {
+      console.error('Failed to load optimizer data');
+    }
+  })
+  .catch(error => {
+    console.error('Error loading optimizer data:', error);
+  });
+}
+
+function updateInfographic(distributionData, performanceData) {
+  const directionCounts = distributionData.direction_trade_counts || {};
+  const buyTrades = directionCounts.buy_trades || 0;
+  const shortTrades = directionCounts.short_trades || 0;
+  
+  const universalStrategy = performanceData.universal_strategy || {};
+  
+  // Update Universal BUY metrics
+  document.getElementById('buy-total-trades').textContent = buyTrades;
+  document.getElementById('buy-avg-pnl').textContent = `${(universalStrategy.avg_pnl * 100).toFixed(2)}%`;
+  document.getElementById('buy-win-rate').textContent = `${(universalStrategy.win_rate * 100).toFixed(1)}%`;
+  
+  // Update Universal SHORT metrics  
+  document.getElementById('short-total-trades').textContent = shortTrades;
+  document.getElementById('short-avg-pnl').textContent = `${(universalStrategy.avg_pnl * 100).toFixed(2)}%`;
+  document.getElementById('short-win-rate').textContent = `${(universalStrategy.win_rate * 100).toFixed(1)}%`;
+  
+  // Load top optimizations and symbol-specific strategies
+  loadTopOptimizations();
+  loadSymbolSpecificStrategies();
+}
+
+function loadSymbolSpecificStrategies() {
+  // Simulate symbol-specific strategies with their optimized parameters
+  const symbolBuyStrategies = [
+    { symbol: "AAPL", trades: 24, stop: 1.2, target: 3.8, entry: 12, pnl: 3.2 },
+    { symbol: "TSLA", trades: 18, stop: 1.8, target: 4.5, entry: 8, pnl: 2.8 },
+    { symbol: "MSFT", trades: 15, stop: 1.0, target: 3.2, entry: 15, pnl: 2.4 },
+    { symbol: "GOOGL", trades: 12, stop: 1.5, target: 4.1, entry: 5, pnl: 2.1 },
+    { symbol: "NVDA", trades: 11, stop: 2.0, target: 5.2, entry: 20, pnl: 1.9 },
+    { symbol: "AMZN", trades: 10, stop: 1.3, target: 3.6, entry: 10, pnl: 1.7 }
+  ];
+  
+  const symbolShortStrategies = [
+    { symbol: "SPY", trades: 22, stop: 1.5, target: 3.9, entry: 18, pnl: 2.6 },
+    { symbol: "QQQ", trades: 19, stop: 1.1, target: 3.4, entry: 12, pnl: 2.3 },
+    { symbol: "IWM", trades: 16, stop: 1.7, target: 4.2, entry: 25, pnl: 2.0 },
+    { symbol: "AMD", trades: 13, stop: 1.4, target: 3.7, entry: 7, pnl: 1.8 },
+    { symbol: "META", trades: 10, stop: 1.9, target: 4.8, entry: 15, pnl: 1.5 }
+  ];
+  
+  // Update counts
+  document.getElementById('symbol-buy-count').textContent = symbolBuyStrategies.length;
+  document.getElementById('symbol-short-count').textContent = symbolShortStrategies.length;
+  
+  // Display individual symbol strategies
+  displaySymbolStrategies('symbol-buy-list', symbolBuyStrategies);
+  displaySymbolStrategies('symbol-short-list', symbolShortStrategies);
+}
+
+function displaySymbolStrategies(elementId, strategies) {
+  const html = strategies.map(strategy => `
+    <div class="optimization-item">
+      <div class="d-flex justify-content-between align-items-start mb-1">
+        <strong>${strategy.symbol}</strong>
+        <span class="${strategy.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}">
+          ${strategy.pnl >= 0 ? '+' : ''}${strategy.pnl.toFixed(1)}%
+        </span>
+      </div>
+      <div class="text-light" style="font-size: 0.75rem;">
+        Stop: ${strategy.stop}% | Target: ${strategy.target}% | Entry: +${strategy.entry}min
+      </div>
+      <div class="text-muted" style="font-size: 0.7rem;">
+        ${strategy.trades} trades
+      </div>
+    </div>
+  `).join('');
+  
+  document.getElementById(elementId).innerHTML = html;
+}
+
+function loadTopOptimizations() {
+  // Simulate top optimizations data - in real implementation this would come from API
+  const buyOptimizations = [
+    { rank: 1, params: "Stop: 1.5%, Target: 4.2%, Entry: +15min", pnl: 2.8 },
+    { rank: 2, params: "Stop: 1.0%, Target: 3.8%, Entry: +5min", pnl: 2.3 },
+    { rank: 3, params: "Stop: 2.0%, Target: 5.1%, Entry: +25min", pnl: 2.1 },
+    { rank: 4, params: "Stop: 1.2%, Target: 3.5%, Entry: +10min", pnl: 1.9 },
+    { rank: 5, params: "Stop: 1.8%, Target: 4.5%, Entry: +20min", pnl: 1.7 }
+  ];
+  
+  const shortOptimizations = [
+    { rank: 1, params: "Stop: 1.8%, Target: 3.9%, Entry: +8min", pnl: 2.2 },
+    { rank: 2, params: "Stop: 1.3%, Target: 3.2%, Entry: +12min", pnl: 1.8 },
+    { rank: 3, params: "Stop: 2.1%, Target: 4.8%, Entry: +18min", pnl: 1.6 },
+    { rank: 4, params: "Stop: 1.6%, Target: 3.6%, Entry: +6min", pnl: 1.4 },
+    { rank: 5, params: "Stop: 1.9%, Target: 4.1%, Entry: +22min", pnl: 1.2 }
+  ];
+  
+  displayOptimizations('buy-optimizations', buyOptimizations);
+  displayOptimizations('short-optimizations', shortOptimizations);
+}
+
+function displayOptimizations(elementId, optimizations) {
+  const html = optimizations.map(opt => `
+    <div class="optimization-item">
+      <span class="optimization-rank">#${opt.rank}</span>
+      ${opt.params}
+      <span class="float-end ${opt.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}">
+        ${opt.pnl >= 0 ? '+' : ''}${opt.pnl.toFixed(1)}%
+      </span>
+    </div>
+  `).join('');
+  
+  document.getElementById(elementId).innerHTML = html;
+}
+
+function loadSymbolSpecificLists() {
+  // Simulate symbol-specific data
+  const symbolBuyList = [
+    { symbol: "AAPL", trades: 24, pnl: 3.2 },
+    { symbol: "TSLA", trades: 18, pnl: 2.8 },
+    { symbol: "MSFT", trades: 15, pnl: 2.4 },
+    { symbol: "GOOGL", trades: 12, pnl: 2.1 },
+    { symbol: "NVDA", trades: 11, pnl: 1.9 }
+  ];
+  
+  const symbolShortList = [
+    { symbol: "SPY", trades: 22, pnl: 2.6 },
+    { symbol: "QQQ", trades: 19, pnl: 2.3 },
+    { symbol: "IWM", trades: 16, pnl: 2.0 },
+    { symbol: "AMD", trades: 13, pnl: 1.8 },
+    { symbol: "META", trades: 10, pnl: 1.5 }
+  ];
+  
+  displaySymbolList('symbol-buy-list', symbolBuyList);
+  displaySymbolList('symbol-short-list', symbolShortList);
+}
+
+function displaySymbolList(elementId, symbols) {
+  const html = symbols.map((sym, index) => `
+    <div class="optimization-item">
+      <span class="optimization-rank">#${index + 1}</span>
+      <strong>${sym.symbol}</strong> (${sym.trades} trades)
+      <span class="float-end ${sym.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}">
+        ${sym.pnl >= 0 ? '+' : ''}${sym.pnl.toFixed(1)}%
+      </span>
+    </div>
+  `).join('');
+  
+  document.getElementById(elementId).innerHTML = html;
+}
+</script>

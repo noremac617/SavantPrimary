@@ -1,0 +1,287 @@
+<style>
+  .card {
+    background-color: #0f0f0f;
+    border: 1px solid #2c2c2c;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 15px rgba(0, 184, 255, 0.2);
+  }
+
+  .card-header {
+    background-color: #2a2a2a;
+    color: #00b8ff;
+    font-weight: bold;
+  }
+
+  .form-label,
+  .form-select,
+  .form-control,
+  .btn,
+  .table,
+  .table th,
+  .table td,
+  .tab-content {
+    color: #e0e0e0;
+  }
+
+  .form-select,
+  .form-control {
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+  }
+
+  .form-select:focus,
+  .form-control:focus {
+    background-color: #1f1f1f;
+    color: #fff;
+    border-color: #00b8ff;
+    box-shadow: 0 0 5px rgba(0, 184, 255, 0.5);
+  }
+
+  .btn-primary {
+    background-color: #00b8ff;
+    border-color: #00b8ff;
+    color: #000;
+  }
+
+  .btn-outline-light {
+    border-color: #00b8ff;
+    color: #00b8ff;
+  }
+
+  .btn-outline-light:hover {
+    background-color: #00b8ff;
+    color: #000;
+  }
+
+  .table-dark {
+    background-color: #121212;
+  }
+
+  .nav-tabs .nav-link.active {
+    background-color: #00b8ff;
+    color: #000;
+    font-weight: bold;
+  }
+
+  .nav-tabs .nav-link {
+    background-color: #2c2c2c;
+    color: #ccc;
+    border: none;
+    margin-right: 5px;
+  }
+</style>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <ul class="nav nav-tabs mb-3" id="plToggleTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="avg-tab" data-bs-toggle="tab" data-bs-target="#avg" type="button" role="tab"
+          onclick="localStorage.setItem('plTab', 'avg')">
+          Avg % P/L
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="total-tab" data-bs-toggle="tab" data-bs-target="#total" type="button" role="tab"
+          onclick="localStorage.setItem('plTab', 'total')">
+          Total % P/L
+        </button>
+      </li>
+    </ul>
+    <div class="tab-content" id="plToggleContent">
+      <div class="tab-pane fade" id="avg" role="tabpanel">
+        <div class="mb-2">
+          <strong class="text-light">Top Gainers:</strong>
+          {% for item in top_avg_winners %}
+            <span class="badge rounded-pill bg-success text-white fw-semibold me-2 mb-1 d-inline-block">
+              {{ item.symbol }} ({{ item.pnl_pct }}%)
+            </span>
+          {% endfor %}
+        </div>
+        <div>
+          <strong class="text-light">Top Losers:</strong>
+          {% for item in top_avg_losers %}
+            <span class="badge rounded-pill bg-danger text-white fw-semibold me-2 mb-1 d-inline-block">
+              {{ item.symbol }} ({{ item.pnl_pct }}%)
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="tab-pane fade" id="total" role="tabpanel">
+        <div class="mb-2">
+          <strong class="text-light">Top Gainers:</strong>
+          {% for item in top_total_winners %}
+            <span class="badge rounded-pill bg-success text-white fw-semibold me-2 mb-1 d-inline-block">
+              {{ item.symbol }} ({{ item.pnl_pct }}%)
+            </span>
+          {% endfor %}
+        </div>
+        <div>
+          <strong class="text-light">Top Losers:</strong>
+          {% for item in top_total_losers %}
+            <span class="badge rounded-pill bg-danger text-white fw-semibold me-2 mb-1 d-inline-block">
+              {{ item.symbol }} ({{ item.pnl_pct }}%)
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block content %}
+<form action="/" id="filterForm" class="mb-3" method="get">
+  <input type="hidden" name="show_tab" value="logs">
+  <div class="row gy-3 gx-3 align-items-end">
+    <div class="col-6 col-md-2">
+      <label class="form-label mb-0" for="year">Year:</label>
+      <select id="yearSelect" class="form-select form-select-sm" name="year">
+        <option value="0" {% if not selected_year %}selected{% endif %}>Any</option>
+        {% for y in years %}
+          <option value="{{ y }}" {% if selected_year == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label mb-0" for="month">Month:</label>
+      <select id="monthSelect" class="form-select form-select-sm" name="month">
+        <option value="0" {% if not selected_month %}selected{% endif %}>Any</option>
+        {% for m in months %}
+          <option value="{{ m }}" {% if selected_month == m %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-md-2">
+      <label class="form-label mb-0" for="day">Day:</label>
+      <select id="daySelect" class="form-select form-select-sm" name="day">
+        <option value="0" {% if not selected_day %}selected{% endif %}>Any</option>
+        {% for d in range(1, 32) %}
+          <option value="{{ d }}" {% if selected_day == d %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-md-3">
+      <label class="form-label mb-0" for="tickerSelect">Ticker:</label>
+      <select id="tickerSelect" class="form-select form-select-sm" name="ticker">
+        <option value="" {% if not selected_ticker %}selected{% endif %}>Any</option>
+        {% for t in tickers %}
+          <option value="{{ t }}" {% if selected_ticker == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-6 col-md-1 d-grid">
+      <button class="btn btn-primary btn-sm mt-2" type="submit" onclick="localStorage.setItem('defaultTab', 'logs')">
+        Filter
+      </button>
+    </div>
+
+    <div class="col-6 col-md-2 d-grid">
+      <a href="{{ url_for('index', show_tab='logs') }}" class="btn btn-outline-light btn-sm mt-2">
+        Reset Filters
+      </a>
+    </div>
+
+    <div class="col-12 col-md-auto text-end">
+      <span class="fw-semibold small {% if filtered_pl >= 0 %}text-success{% else %}text-danger{% endif %}">
+        <i class="fas fa-filter me-1"></i> Filtered P/L: {{ filtered_pl }}%
+      </span>
+    </div>
+    
+    <div class="col-6 col-md-2 d-grid">
+      <button type="button" class="btn btn-outline-light btn-sm mt-2" onclick="toggleDailyPlTable()">
+        Daily P/L Summary
+      </button>
+    </div>
+  </div>
+</form>
+
+<div id="dailyPlCard" class="card mb-3" style="display: none;">
+  <div class="card-header">Daily Average P/L</div>
+  <div class="card-body">
+    {% if daily_avg_pl %}
+      <div class="table-responsive">
+        <table class="table table-dark table-sm table-bordered">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Avg P/L %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for day in daily_avg_pl %}
+              <tr>
+                <td>{{ day.date }}</td>
+                <td class="{% if day.avg_pl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                  {{ day.avg_pl }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-light">No trades found for selected filters.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if trades %}
+  <div class="table-responsive">
+    <table class="table table-dark table-hover table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Symbol</th>
+          <th>Action</th>
+          <th>Entry</th>
+          <th>Exit</th>
+          <th>P/L %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trade in trades %}
+          {% if trade is mapping and 'pnl_pct' in trade %}
+          <tr>
+            <td>{{ trade['formatted_date'] }}</td>
+            <td>{{ trade['symbol'] }}</td>
+            <td>{{ trade['action'] }}</td>
+            <td>{{ trade['entry'] }}</td>
+            <td>{{ trade['exit'] }}</td>
+            <td class="{% if trade['pnl_pct'] >= 0 %}text-success{% else %}text-danger{% endif %}">
+              {{ trade['pnl_pct'] }}
+            </td>
+          </tr>
+          {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info mt-3">
+    Please select a year, month, or day filter to view trades.
+  </div>
+{% endif %}
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const savedTab = localStorage.getItem("plTab") || "avg";
+    const avgTab = document.getElementById("avg-tab");
+    const totalTab = document.getElementById("total-tab");
+    if (savedTab === "avg") new bootstrap.Tab(avgTab).show();
+    else if (savedTab === "total") new bootstrap.Tab(totalTab).show();
+  });
+
+    function toggleDailyPlTable() {
+    const card = document.getElementById("dailyPlCard");
+    if (card.style.display === "none") {
+      card.style.display = "block";
+    } else {
+      card.style.display = "none";
+    }
+  }
+</script>
+{% endblock %}
